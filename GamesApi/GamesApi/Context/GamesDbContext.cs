@@ -18,7 +18,7 @@ namespace GamesApi.Context
 
     public class GamesDbContext : DbContext
     {
-        const string connectionString = "";
+        const string connectionString = "workstation id=GamesApi.mssql.somee.com;packet size=4096;user id=TarcisioVitor_SQLLogin_1;pwd=cj5rhnwpkq;data source=GamesApi.mssql.somee.com;persist security info=False;initial catalog=GamesApi";
         #region Infra
         public GamesDbContext() : base(connectionString)
         {
