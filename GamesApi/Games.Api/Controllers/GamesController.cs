@@ -15,37 +15,55 @@ namespace Games.Api.Controllers
     {
         [HttpGet]
         [Route("api/game/score")]
-        public dynamic GetBestScores(int gameId)
+        public async Task<IHttpActionResult> GetBestScores()
         {
             using (var dbContext = new GamesDbContext())
             {
-                return Ok( dbContext.Score.Include("User").Where(x => x.GameId == gameId).OrderBy(x => x.ScorePoint).Select(x => new
+                return Ok(await  dbContext.Score.Include("User").Where(x => x.GameId == 1).OrderBy(x => x.ScorePoint).Select(x => new
                 {
                     x.ScorePoint,
-                    x.User.Name
-                }).Take(15).ToList());
+                    x.User.Name,
+                    x.User.Password
+                }).Take(15).ToListAsync());
             }
         }
 
         [HttpPost]
-        [Route("createuser")]
-        public async Task PostUser([FromBody] User user)
+        [Route("api/game/user")]
+        public async Task<IHttpActionResult> PostUser([FromBody] User user, [FromUri] int bestScore = 0)
         {
+            Guid userId;
             using (var dbContext = new GamesDbContext())
             {
                 var currentUser = await dbContext.User.Where(x => x.Email == user.Email).FirstOrDefaultAsync();
                 if (currentUser == null)
                 {
-                    user.Id = Guid.NewGuid();
+                    userId = Guid.NewGuid();
+                    user.Id = userId;
                     await dbContext.Add(user);
                 }
                 else
                 {
                     currentUser.Email = user.Email;
                     currentUser.Name = user.Name;
+                    userId = currentUser.Id;
                     await dbContext.Edit(currentUser);
                 }
+                if (bestScore > 0)
+                {
+                    var currentGameScore = await dbContext.Score.Where(x => x.UserId == userId && x.ScorePoint == bestScore).FirstOrDefaultAsync();
+                    if (currentGameScore == null)
+                    {
+                        await dbContext.Add(new Score {
+                            UserId = userId,
+                            GameId = 1,
+                            Id = Guid.NewGuid(),
+                            ScorePoint = bestScore
+                        });
+                    }
+                }
                 await dbContext.SaveChangesAsync();
+                return Ok();
             }
         }
     }
